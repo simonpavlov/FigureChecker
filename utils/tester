@@ -1,0 +1,30 @@
+#!/bin/bash
+
+pushd `dirname $0` > /dev/null
+cd ..
+PROJDIR=`pwd -P`
+popd > /dev/null
+
+mkdir -p $PROJDIR/log
+
+function test {
+    echo $1
+    LOGFILE=$PROJDIR$3
+    if [ -f $LOGFILE ]; then
+        echo "FILE exist"
+        rm $LOGFILE
+    fi
+    touch "$LOGFILE"
+    for file in `ls $PROJDIR$2`; do
+        echo `basename $file`
+        echo `basename $file` >> $LOGFILE
+        $PROJDIR/bin/checker < $file >> $LOGFILE
+        echo "" >> $LOGFILE
+    done
+}
+
+test "Clear CUBE:" "/test/clear/cube*" "/log/clear_cube.log"
+test "Noice CUBE:" "/test/noice/cube*" "/log/noice_cube.log"
+test "Clear CIRCLE:" "/test/clear/circle*" "/log/clear_circle.log"
+test "Noice CIRCLE:" "/test/noice/circle*" "/log/noice_circle.log"
+test "BAD FIGURE:" "/test/bad_figure/figure*" "/log/bad_figure.log"

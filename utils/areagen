@@ -1,0 +1,76 @@
+#!/usr/bin/python3
+
+from sys import stdout, argv
+from random import randrange
+
+WIDTH = 15
+HEIGHT = 15
+
+
+def coub_gen(x, y, width):
+    area = [[0] * WIDTH for _ in range(HEIGHT)]
+    for line in area[y: y + width]:
+        line[x: x + width] = [1] * width
+    return area
+
+
+def circle_gen(c_x, c_y, r):
+    area = [[0] * WIDTH for _ in range(HEIGHT)]
+    def pixel_circle(x, y):
+        for _x in range(-x, x + 1):
+            area[c_y - y][c_x + _x] = 1
+            area[c_y + y][c_x + _x] = 1
+        for _y in range(-y, y + 1):
+            area[c_y - x][c_x + _y] = 1
+            area[c_y + x][c_x + _y] = 1
+    x = 0
+    y = r
+    d = 3 - 2 * r
+    while x < y:
+        pixel_circle(x, y)
+        if d < 0:
+            d = d + 4 * x + 6
+        else:
+            d = d + 4 * (x - y) + 10
+            y -= 1
+        x += 1
+    if x == y: pixel_circle(x, y)
+    return area
+
+
+def write_area(area, f=stdout):
+    for line in area:
+        print(*line, sep='', file=f)
+
+
+def noice_area(area, point_count):
+    x_coord = [randrange(0, WIDTH, 1) for _ in range(point_count)]
+    y_coord = [randrange(0, HEIGHT, 1) for _ in range(point_count)]
+    coords = list(zip(x_coord, y_coord))
+    for coord in coords:
+        area[coord[1]][coord[0]] = (area[coord[1]][coord[0]] + 1) % 2
+
+
+def main():
+    filename = 'log' if len(argv) < 2 else argv[1]
+
+    def area_gen_write(area, n, suf=''):
+        write_area(area, f=open(filename + suf + '_{:03}'.format(n), 'w'))
+        noice_area(area, 7)
+        write_area(area, f=open(filename + suf + '_{:03}_noice'.format(n), 'w'))
+
+    '''
+    for n in range(5, 11):
+        area_gen_write(coub_gen((WIDTH - n) // 2 , (HEIGHT - n) // 2, n), n, "001")
+        area_gen_write(coub_gen(1, 1, n), n, "002")
+        area_gen_write(coub_gen((WIDTH - n) // 2, HEIGHT - n - 1, n), n, "003")
+        '''
+
+    for n in range(2, 6):
+        area_gen_write(circle_gen(n + 1, n + 1, n), n * 2 + 1, "001")
+        area_gen_write(circle_gen(WIDTH // 2, HEIGHT // 2, n), n * 2 + 1, "002")
+        area_gen_write(circle_gen(WIDTH // 2, HEIGHT - n - 2, n), n * 2 + 1, "003")
+
+
+if __name__ == "__main__":
+    main()

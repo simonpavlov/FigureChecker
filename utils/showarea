@@ -1,0 +1,106 @@
+#!/usr/bin/python3
+
+import pygame
+from itertools import combinations_with_replacement
+from time import sleep
+from sys import argv, stdout
+from os import path
+
+
+WIDTH = 15
+HEIGHT = 15
+UNIT_WIDTH = 20
+WIN_WIDTH = WIDTH * UNIT_WIDTH
+WIN_HEIGHT = HEIGHT * UNIT_WIDTH
+DISPLAY = (WIN_WIDTH, WIN_HEIGHT)
+BACKGROUND_COLOR = "#000000"
+FIGURE_COLOR = "#FF0000"
+
+
+def area_open(f_name):
+    def area_load(f_name):
+        with open(f_name) as f:
+            return [list(map(int, line.rstrip())) for line in f]
+
+    if(path.exists(f_name)):
+        return area_load(f_name)
+    else:
+        area = [[0] * WIDTH for _ in range(HEIGHT)]
+        with open(f_name, 'w') as f:
+            area_write(area, f)
+        return area
+
+
+
+
+def area_write(area, f=stdout):
+    for line in area:
+        print(*line, sep='', file=f)
+
+
+def area_draw(area, surf):
+    def coord_draw(x, y):
+        rect = [x * UNIT_WIDTH + 2, y * UNIT_WIDTH + 2, UNIT_WIDTH - 4, UNIT_WIDTH - 4]
+        pygame.draw.rect(surf, pygame.Color(FIGURE_COLOR), rect)
+
+    for coord in combinations_with_replacement(range(0, HEIGHT), 2):
+        x, y = coord
+        if(area[y][x]):
+            coord_draw(x, y)
+        if(area[x][y] and x != y):
+            coord_draw(y, x)
+
+
+def main():
+    def convert_pos_to_coord(pos):
+        x, y = pos
+        return x // UNIT_WIDTH, y // UNIT_WIDTH
+
+    filenames = ['log'] if len(argv) < 2 else argv[1:]
+    n_file = 0
+    count_file = len(filenames)
+    print(filenames)
+    filename = filenames[n_file]
+
+    pygame.init()
+    screen = pygame.display.set_mode(DISPLAY)
+    pygame.display.set_caption("ShowArea " + filename)
+    surf = pygame.Surface((WIN_WIDTH, WIN_HEIGHT))
+
+    area = area_open(filename)
+
+    program_run = True
+    while program_run:
+        surf.fill(pygame.Color(BACKGROUND_COLOR))
+        area_draw(area, surf)
+
+        for e in pygame.event.get():
+            if e.type == pygame.QUIT:
+                program_run = False
+            elif e.type == pygame.KEYDOWN:
+                if e.key == pygame.K_q:
+                    program_run = False
+                elif e.key == pygame.K_s:
+                    print('save')
+                    area_write(area, open(filename, 'w'))
+                elif count_file > 1:
+                    if e.key in (pygame.K_LEFT, pygame.K_h):
+                        n_file = (n_file - 1) % count_file
+                    elif e.key in (pygame.K_RIGHT, pygame.K_l):
+                        n_file = (n_file + 1) % count_file
+                    filename = filenames[n_file]
+                    area = area_open(filename)
+                    pygame.display.set_caption("ShowArea " + filename)
+            elif e.type == pygame.MOUSEBUTTONDOWN:
+                x, y = convert_pos_to_coord(pygame.mouse.get_pos())
+                print("(x, y):", (x, y))
+                area[y][x] = (area[y][x] + 1) % 2
+
+
+        screen.blit(surf, (0, 0))
+        pygame.display.update()
+        sleep(1 / 30)
+
+
+if __name__ == "__main__":
+    main()
